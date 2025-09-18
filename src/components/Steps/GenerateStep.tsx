@@ -65,8 +65,7 @@ export const GenerateStep: React.FC = () => {
   const handleGenerateImages = async () => {
     if (!apiKey) {
       message.error({
-        content: '图片生成需要API密钥',
-        description: '请在设置中配置您的豆包API密钥，或查看API密钥申请教程',
+        content: '图片生成需要API密钥，请在设置中配置您的豆包API密钥，或查看API密钥申请教程',
         duration: 5
       });
       return;

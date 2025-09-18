@@ -6,7 +6,7 @@ import { useStepStore } from '../../stores/useStepStore';
 
 interface StepContainerProps {
   children: ReactNode;
-  title?: string;
+  title?: ReactNode;
   showNavigation?: boolean;
   onNext?: () => void;
   onPrev?: () => void;
