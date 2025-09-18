@@ -111,14 +111,26 @@ export default async function handler(req, res) {
       res.setHeader('X-RateLimit-Remaining-Day', rateCheck.dayRemaining);
     }
     
-    // 获取API密钥：优先用户提供的，其次服务端的（免费额度）
-    const apiKey = userApiKey || process.env.DOUBAO_API_KEY;
+    // v1.6.1 安全修复：移除危险的fallback机制
+    // 现在严格要求用户提供自己的API密钥，不再使用服务器密钥作为fallback
+    const apiKey = userApiKey;
     
     if (!apiKey) {
       res.status(401).json({ 
-        error: 'API密钥未配置',
-        message: '服务暂时不可用，请稍后重试或在设置中配置您的API密钥',
-        type: 'API_KEY_UNAVAILABLE'
+        error: '需要API密钥',
+        message: 'AI文本拆分功能需要您提供豆包API密钥。请在设置中配置您的API密钥。',
+        type: 'API_KEY_REQUIRED',
+        guide: '请在设置中配置您的豆包API密钥，或查看API密钥申请教程'
+      });
+      return;
+    }
+    
+    // 基本格式验证
+    if (typeof apiKey !== 'string' || apiKey.trim().length < 20) {
+      res.status(400).json({
+        error: 'API密钥格式错误',
+        message: 'API密钥长度不足或格式不正确',
+        type: 'API_KEY_FORMAT_ERROR'
       });
       return;
     }
@@ -136,10 +148,44 @@ export default async function handler(req, res) {
     // 获取响应数据
     const data = await response.json();
     
-    // 检查响应状态
+    // 检查响应状态并提供详细的错误信息
     if (!response.ok) {
       console.error('Doubao API error:', data);
-      res.status(response.status).json(data);
+      
+      // 处理特定的API错误码
+      if (response.status === 401) {
+        res.status(401).json({ 
+          error: 'API密钥无效或已过期',
+          message: 'API密钥验证失败，请检查密钥是否正确或已过期',
+          type: 'API_KEY_INVALID',
+          originalError: data
+        });
+        return;
+      } else if (response.status === 403) {
+        res.status(403).json({ 
+          error: 'API权限不足',
+          message: 'API密钥权限不足，请检查账户状态和权限设置',
+          type: 'PERMISSION_DENIED',
+          originalError: data 
+        });
+        return;
+      } else if (response.status === 429) {
+        res.status(429).json({ 
+          error: '请求过于频繁',
+          message: 'API调用频率过高，请稍后再试',
+          type: 'RATE_LIMIT',
+          originalError: data 
+        });
+        return;
+      }
+      
+      // 其他错误，返回原始错误信息
+      res.status(response.status).json({
+        error: data.error || '豆包API错误',
+        message: data.error?.message || '请求失败',
+        type: 'API_ERROR',
+        originalError: data
+      });
       return;
     }
     

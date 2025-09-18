@@ -55,11 +55,21 @@ class DoubaoAIService {
   }
 
   /**
-   * 使用AI智能拆分文本
+   * 使用AI智能拆分文本 - 添加密钥验证保护
    */
   async splitTextWithAI(text: string, modelId: string = AI_MODEL, customPrompt?: string): Promise<SplitResult[]> {
     if (!this.client) {
       throw new Error('AI客户端未初始化');
+    }
+    
+    // v1.6.1 安全修复：功能调用前验证API密钥
+    if (!this.apiKey) {
+      throw new Error('AI文本拆分功能需要API密钥。请在设置中配置您的豆包API密钥。');
+    }
+    
+    // 格式验证（基础检查）
+    if (typeof this.apiKey !== 'string' || this.apiKey.trim().length < 20) {
+      throw new Error('API密钥格式错误。请检查API密钥是否正确。');
     }
 
     const prompt = this.buildSplitPrompt(text, customPrompt);
@@ -282,15 +292,145 @@ ${text}`;
   }
 
   /**
-   * 测试AI连接
+   * 测试AI连接 - 使用专用测试端点
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection(): Promise<{ success: boolean; message: string; error?: string }> {
+    if (!this.apiKey) {
+      return {
+        success: false,
+        message: '请先设置API密钥',
+        error: 'API_KEY_MISSING'
+      };
+    }
+
     try {
-      const response = await this.callAI('测试连接，请回复"OK"');
-      return response.includes('OK') || response.includes('ok');
-    } catch (error) {
-      console.error('AI连接测试失败:', error);
-      return false;
+      const response = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey
+        },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(15000) // 15秒超时
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Connection test failed:', data);
+        
+        // 处理特定错误类型
+        switch (data.type) {
+          case 'API_KEY_MISSING':
+            return {
+              success: false,
+              message: '请提供API密钥',
+              error: 'API_KEY_MISSING'
+            };
+          case 'API_KEY_FORMAT_ERROR':
+            return {
+              success: false,
+              message: 'API密钥格式错误',
+              error: 'API_KEY_FORMAT_ERROR'
+            };
+          case 'API_KEY_INVALID':
+            return {
+              success: false,
+              message: 'API密钥无效或已过期',
+              error: 'API_KEY_INVALID'
+            };
+          case 'PERMISSION_DENIED':
+            return {
+              success: false,
+              message: 'API密钥权限不足',
+              error: 'PERMISSION_DENIED'
+            };
+          case 'RATE_LIMIT_EXCEEDED':
+            return {
+              success: false,
+              message: '测试请求过于频繁，请稍后再试',
+              error: 'RATE_LIMIT_EXCEEDED'
+            };
+          case 'RATE_LIMIT':
+            return {
+              success: false,
+              message: 'API调用频率过高，请稍后再试',
+              error: 'RATE_LIMIT'
+            };
+          case 'TIMEOUT':
+            return {
+              success: false,
+              message: '连接超时，请检查网络连接',
+              error: 'TIMEOUT'
+            };
+          case 'NETWORK_ERROR':
+            return {
+              success: false,
+              message: '网络连接失败',
+              error: 'NETWORK_ERROR'
+            };
+          default:
+            return {
+              success: false,
+              message: data.message || '连接测试失败',
+              error: data.type || 'UNKNOWN_ERROR'
+            };
+        }
+      }
+
+      if (data.success) {
+        let message = '连接测试成功';
+        
+        // 添加功能详情
+        if (data.capabilities) {
+          const features = [];
+          if (data.capabilities.chat) {
+            features.push('AI文本拆分');
+          }
+          if (data.capabilities.imageGeneration) {
+            features.push('图片生成');
+          }
+          if (features.length > 0) {
+            message += `，支持功能：${features.join('、')}`;
+          }
+        }
+        
+        return {
+          success: true,
+          message: message
+        };
+      } else {
+        return {
+          success: false,
+          message: data.message || '连接测试失败',
+          error: data.error || 'UNKNOWN_ERROR'
+        };
+      }
+
+    } catch (error: any) {
+      console.error('Connection test error:', error);
+      
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          message: '连接测试超时',
+          error: 'TIMEOUT'
+        };
+      }
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        return {
+          success: false,
+          message: '网络连接失败，请检查网络连接',
+          error: 'NETWORK_ERROR'
+        };
+      }
+      
+      return {
+        success: false,
+        message: '连接测试失败',
+        error: 'UNKNOWN_ERROR'
+      };
     }
   }
 }

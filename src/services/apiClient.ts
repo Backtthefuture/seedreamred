@@ -55,6 +55,16 @@ class DoubaoAPIClient {
     if (!this.client) {
       throw new Error('API客户端未初始化');
     }
+    
+    // v1.6.1 安全修复：功能调用前验证API密钥
+    if (!this.apiKey) {
+      throw new Error('图片生成功能需要API密钥。请在设置中配置您的豆包API密钥。');
+    }
+    
+    // 格式验证（基础检查）
+    if (typeof this.apiKey !== 'string' || this.apiKey.trim().length < 20) {
+      throw new Error('API密钥格式错误。请检查API密钥是否正确。');
+    }
 
     const maxRetries = 3;
     let lastError: Error | null = null;

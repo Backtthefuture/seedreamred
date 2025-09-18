@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Modal, Input, Button, Form, message, Alert, Switch, Tag, Divider } from 'antd';
-import { KeyOutlined } from '@ant-design/icons';
+import { KeyOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { validators } from '../../utils/validators';
 import { PRESET_SIZES } from '../../utils/constants';
+import { aiService } from '../../services/aiService';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -73,16 +74,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleTest = async () => {
     try {
-      await form.validateFields();
+      const values = await form.validateFields();
+      const testApiKey = values.apiKey?.trim();
+      
+      if (!testApiKey) {
+        message.error('请输入API密钥');
+        return;
+      }
+      
+      // 使用增强的格式验证
+      const formatError = validators.getApiKeyError(testApiKey);
+      if (formatError) {
+        message.error(formatError);
+        return;
+      }
+      
       setTesting(true);
-      // TODO: 实际测试API连接
-      setTimeout(() => {
-        setTesting(false);
-        message.success('API连接测试成功');
-      }, 1000);
-    } catch (error) {
+      
+      // 设置临时API密钥进行测试
+      aiService.setApiKey(testApiKey);
+      
+      // 调用真实的API测试
+      const result = await aiService.testConnection();
+      
       setTesting(false);
-      message.error('请先输入有效的API密钥');
+      
+      if (result.success) {
+        message.success({
+          content: result.message,
+          duration: 5,
+          icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />
+        });
+      } else {
+        message.error({
+          content: result.message,
+          duration: 8,
+          icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+        });
+      }
+      
+    } catch (error: any) {
+      setTesting(false);
+      console.error('Test connection error:', error);
+      message.error({
+        content: '连接测试失败，请检查网络连接',
+        duration: 5,
+        icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+      });
     }
   };
 
@@ -131,10 +169,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             { required: true, message: '请输入API密钥' },
             {
               validator: (_, value) => {
-                if (!value || validators.isValidApiKey(value)) {
+                if (!value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('请输入有效的API密钥'));
+                const error = validators.getApiKeyError(value);
+                if (error) {
+                  return Promise.reject(new Error(error));
+                }
+                return Promise.resolve();
               },
             },
           ]}

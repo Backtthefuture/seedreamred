@@ -11,6 +11,9 @@
     },
     "api/doubao-tos-proxy.js": {
       "maxDuration": 30
+    },
+    "api/test-connection.js": {
+      "maxDuration": 15
     }
   },
   "rewrites": [
