@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 粉色背景圆形 -->
+  <circle cx="50" cy="50" r="45" fill="#FFE4E1"/>
+  
+  <!-- 内部白色圆形边框 -->
+  <circle cx="50" cy="50" r="42" fill="white"/>
+  
+  <!-- 樱花背景装饰圆 -->
+  <circle cx="50" cy="50" r="38" fill="#FFF0F5"/>
+  
+  <!-- 樱花Emoji文字 -->
+  <text x="50" y="65" font-size="50" text-anchor="middle" fill="#FF69B4">🌸</text>
+</svg>

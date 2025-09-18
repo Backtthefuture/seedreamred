@@ -1,0 +1,34 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "functions": {
+    "api/doubao-chat.js": {
+      "maxDuration": 30
+    },
+    "api/doubao-images.js": {
+      "maxDuration": 60
+    },
+    "api/doubao-tos-proxy.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/chat",
+      "destination": "/api/doubao-chat"
+    },
+    {
+      "source": "/api/images",
+      "destination": "/api/doubao-images"
+    },
+    {
+      "source": "/api/tos-proxy",
+      "destination": "/api/doubao-tos-proxy"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
