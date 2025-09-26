@@ -3,6 +3,7 @@ import { Button, message } from 'antd';
 import { CreditCardOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { RealPaymentService } from '../../services/realPaymentService';
+import { PaymentErrorHandler } from '../../utils/paymentErrorHandler';
 
 interface PaymentButtonProps {
   productName: string;
@@ -97,10 +98,28 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
 
     } catch (error) {
       console.error('支付处理错误:', error);
-      const errorMessage = error instanceof Error ? error.message : '支付处理失败';
       
-      message.error(errorMessage);
-      onPaymentError?.(errorMessage);
+      // 使用专门的错误处理器
+      const userFriendlyMessage = PaymentErrorHandler.handleZPayError(error);
+      const solution = PaymentErrorHandler.getSolutionSuggestion(error);
+      
+      // 显示用户友好的错误消息
+      message.error({
+        content: userFriendlyMessage,
+        duration: 8,
+      });
+      
+      // 如果有解决建议，显示额外信息
+      if (solution) {
+        setTimeout(() => {
+          message.info({
+            content: solution,
+            duration: 10,
+          });
+        }, 1000);
+      }
+      
+      onPaymentError?.(userFriendlyMessage);
     } finally {
       setLoading(false);
     }
