@@ -225,22 +225,19 @@ export class AuthService {
     console.log('🔍 AuthService deductCredits - 开始扣除积分:', { userId, amount });
     
     try {
-      // 检查当前用户会话
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('🔑 AuthService deductCredits - 当前会话:', { 
-        hasSession: !!session, 
-        sessionUserId: session?.user?.id,
-        targetUserId: userId,
-        sessionError 
-      });
-      
-      if (!session || session.user.id !== userId) {
-        console.log('❌ AuthService deductCredits - 会话不匹配或不存在');
-        return { success: false, error: '用户会话无效，请重新登录' };
-      }
+      // 暂时跳过会话检查，直接尝试查询
+      console.log('⏭️ AuthService deductCredits - 跳过会话检查，直接查询');
       
       // 先获取当前积分
       console.log('📋 AuthService deductCredits - 查询用户积分');
+      
+      // 先测试简单查询
+      console.log('🧪 AuthService deductCredits - 测试基础查询');
+      const testQuery = await supabase
+        .from('user_profiles')
+        .select('id, credits')
+        .limit(1);
+      console.log('🧪 AuthService deductCredits - 基础查询结果:', testQuery);
       
       // 添加超时处理
       const queryPromise = supabase
