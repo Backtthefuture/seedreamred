@@ -35,17 +35,45 @@ export class RealPaymentService {
         throw new Error('支付方式只支持 alipay 或 wxpay');
       }
       
-      // 获取用户token
-      const token = localStorage.getItem('sb-miosumqzcgbscxrwdbuc-auth-token');
-      if (!token) {
-        throw new Error('用户未登录');
+      // 获取用户token - 使用更可靠的方法
+      let accessToken = null;
+      
+      try {
+        // 方法1：尝试从 Supabase 客户端获取
+        const { supabase } = await import('../services/supabaseClient');
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.access_token) {
+          accessToken = session.access_token;
+        } else {
+          // 方法2：从 localStorage 获取
+          const possibleKeys = [
+            'sb-miosumqzcgbscxrwdbuc-auth-token',
+            'sb-btnrlepphoewjioavbqh-auth-token', // 从错误URL推测的key
+            'supabase.auth.token'
+          ];
+          
+          for (const key of possibleKeys) {
+            const token = localStorage.getItem(key);
+            if (token) {
+              try {
+                const authData = JSON.parse(token);
+                if (authData?.access_token) {
+                  accessToken = authData.access_token;
+                  break;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('获取token失败:', error);
       }
       
-      const authData = JSON.parse(token);
-      const accessToken = authData?.access_token;
-      
       if (!accessToken) {
-        throw new Error('无效的认证信息');
+        throw new Error('用户未登录或认证已过期，请重新登录');
       }
       
       // 调用后端API创建支付订单
