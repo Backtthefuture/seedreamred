@@ -160,10 +160,13 @@ export const GenerateStep: React.FC = () => {
     }
     
     console.log('🎬 开始生成流程');
-    setIsGenerating(true);
-    setGenerationProgress(0);
     
     try {
+      console.log('🔧 设置生成状态');
+      setIsGenerating(true);
+      setGenerationProgress(0);
+      console.log('✅ 状态设置完成');
+    
       console.log('💰 尝试扣除积分:', requiredCredits);
       // 先扣除积分
       const deductResult = await deductCredits(requiredCredits);
