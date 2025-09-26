@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Card, Button, Typography, message, Spin, Radio, Space, Alert } from 'antd';
+import { Modal, Card, Typography, message, Radio, Space, Alert } from 'antd';
 import { CrownOutlined, WalletOutlined, AlipayOutlined, WechatOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { PaymentButton } from '../Payment';
@@ -92,7 +92,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
   };
 
   const renderPurchaseCard = (option: typeof PURCHASE_OPTIONS[0]) => {
-    const isLoading = loading === option.id;
     const totalCredits = option.credits + (option.bonus || 0);
     
     return (
@@ -156,9 +155,9 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             size="large"
             className="w-full"
             disabled={!!loading}
-            onPaymentStart={() => handlePaymentStart(option.id)}
-            onPaymentSuccess={(orderInfo) => handlePaymentSuccess(option.id, orderInfo)}
-            onPaymentError={(error) => handlePaymentError(option.id, error)}
+            onPaymentStart={handlePaymentStart}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentError={handlePaymentError}
           />
         </div>
       </Card>

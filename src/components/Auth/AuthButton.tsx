@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Dropdown, Avatar, Space, Popover } from 'antd';
-import { UserOutlined, LoginOutlined, WarningOutlined } from '@ant-design/icons';
+import { Button, Popover } from 'antd';
+import { LoginOutlined, WarningOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { LoginModal } from './LoginModal';
 import { UserProfile } from './UserProfile';

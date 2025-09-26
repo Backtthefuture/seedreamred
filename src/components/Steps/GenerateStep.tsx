@@ -125,7 +125,7 @@ export const GenerateStep: React.FC = () => {
     try {
       // 先扣除积分
       const deductResult = await deductCredits(requiredCredits);
-      if (!deductResult.success) {
+      if (!deductResult) {
         message.error('积分扣除失败，请重试');
         return;
       }

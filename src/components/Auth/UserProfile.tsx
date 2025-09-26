@@ -9,7 +9,6 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
 
-const { Text } = Typography;
 
 interface UserProfileProps {
   onOpenSettings?: () => void;
