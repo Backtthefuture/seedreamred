@@ -9,10 +9,10 @@
     "api/doubao-images.js": {
       "maxDuration": 60
     },
-    "api/doubao-tos-proxy.js": {
+    "api/payment/zpay-url.js": {
       "maxDuration": 30
     },
-    "api/test-connection.js": {
+    "api/payment/zpay-webhook.js": {
       "maxDuration": 15
     }
   },
@@ -24,10 +24,6 @@
     {
       "source": "/api/images",
       "destination": "/api/doubao-images"
-    },
-    {
-      "source": "/api/tos-proxy",
-      "destination": "/api/doubao-tos-proxy"
     },
     {
       "source": "/(.*)",
