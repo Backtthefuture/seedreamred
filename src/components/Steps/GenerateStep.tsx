@@ -172,8 +172,10 @@ export const GenerateStep: React.FC = () => {
       
       message.success(`已扣除${requiredCredits}积分，开始生成图片...`);
       
+      console.log('📝 准备提示词...');
       // 准备提示词
       const prompts = PromptBuilder.buildPrompts(template, splitResults);
+      console.log('📝 生成的提示词:', prompts);
       
       // 初始化图片状态（包含prompt和templateId）
       const initialImages: GeneratedImage[] = prompts.map(p => ({
@@ -186,24 +188,32 @@ export const GenerateStep: React.FC = () => {
         templateId: selectedTemplateId, // 保存模板ID用于编辑后重新生成
       }));
       setGeneratedImages(initialImages);
+      console.log('🖼️ 初始化图片状态:', initialImages);
       
       // 生成图片
       let completed = 0;
       let failed = 0;
       
+      console.log('🚀 开始调用 doubaoAPI.generateImages');
       await doubaoAPI.generateImages(
         prompts.map(p => ({ id: p.id, prompt: p.prompt })),
         (id, status, url, error) => {
+          console.log('📊 图片生成回调:', { id, status, url: url ? 'URL已生成' : '无URL', error });
           if (status === 'success' && url) {
             updateImageUrl(id, url);
             completed++;
-            setGenerationProgress(Math.round((completed / prompts.length) * 100));
+            const progress = Math.round((completed / prompts.length) * 100);
+            console.log('✅ 图片生成成功:', { id, completed, total: prompts.length, progress });
+            setGenerationProgress(progress);
           } else {
             updateImageStatus(id, status, error);
             failed++;
+            console.log('❌ 图片生成失败:', { id, status, error, failed });
           }
         }
       );
+      
+      console.log('🏁 doubaoAPI.generateImages 完成');
       
       // 如果有失败的图片，返还对应的积分
       if (failed > 0) {
