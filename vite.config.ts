@@ -16,7 +16,7 @@ export default defineConfig({
         configure: (proxy: any, _options: any) => {
           proxy.on('proxyReq', (proxyReq: any, req: any, _res: any) => {
             // 从请求头中获取API Key，如果没有则使用环境变量
-            const apiKey = (req.headers['x-api-key'] as string) || process.env.VITE_DOUBAO_API_KEY || 'f9772eba-6dd6-4154-adbf-b1e234a1b0ee';
+            const apiKey = (req.headers['x-api-key'] as string) || process.env.VITE_DOUBAO_API_KEY ;
             proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
             proxyReq.setHeader('Content-Type', 'application/json');
             
@@ -37,7 +37,7 @@ export default defineConfig({
         configure: (proxy: any, _options: any) => {
           proxy.on('proxyReq', (proxyReq: any, req: any, _res: any) => {
             // 从请求头中获取API Key，如果没有则使用环境变量
-            const apiKey = (req.headers['x-api-key'] as string) || process.env.VITE_DOUBAO_API_KEY || 'f9772eba-6dd6-4154-adbf-b1e234a1b0ee';
+            const apiKey = (req.headers['x-api-key'] as string) || process.env.VITE_DOUBAO_API_KEY ;
             proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
             proxyReq.setHeader('Content-Type', 'application/json');
             

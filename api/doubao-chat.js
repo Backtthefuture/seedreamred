@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     // 获取API Key（优先级：请求头 > 环境变量 > 默认值）
     const apiKey = req.headers['x-api-key'] || 
                    process.env.VITE_DOUBAO_API_KEY || 
-                   'f9772eba-6dd6-4154-adbf-b1e234a1b0ee';
+                   process.env.VITE_DOUBAO_API_KEY;
     
     // 代理请求到豆包API
     const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
