@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付订单调试</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>支付订单调试工具</h1>
+    <div id="result"></div>
+    
+    <script>
+        // 请在这里填入您的Supabase配置
+        const SUPABASE_URL = 'your-supabase-url';
+        const SUPABASE_ANON_KEY = 'your-supabase-anon-key';
+        
+        if (SUPABASE_URL.includes('your-supabase-url')) {
+            document.getElementById('result').innerHTML = `
+                <div style="color: red; padding: 20px; border: 1px solid red; margin: 20px;">
+                    <h3>⚠️ 需要配置Supabase</h3>
+                    <p>请在此文件中填入您的真实Supabase配置：</p>
+                    <ul>
+                        <li>SUPABASE_URL: 您的Supabase项目URL</li>
+                        <li>SUPABASE_ANON_KEY: 您的Supabase匿名密钥</li>
+                    </ul>
+                    <p>配置完成后刷新页面查看支付订单记录。</p>
+                </div>
+            `;
+        } else {
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            async function checkPaymentOrders() {
+                try {
+                    const { data, error } = await supabase
+                        .from('payment_orders')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    const resultDiv = document.getElementById('result');
+                    
+                    if (!data || data.length === 0) {
+                        resultDiv.innerHTML = `
+                            <div style="color: orange; padding: 20px; border: 1px solid orange; margin: 20px;">
+                                <h3>📋 未找到支付订单</h3>
+                                <p>数据库中没有支付订单记录，这可能说明：</p>
+                                <ul>
+                                    <li>支付请求没有成功创建订单</li>
+                                    <li>前端支付流程有问题</li>
+                                    <li>数据库连接有问题</li>
+                                </ul>
+                            </div>
+                        `;
+                    } else {
+                        let html = `
+                            <div style="padding: 20px; border: 1px solid green; margin: 20px;">
+                                <h3>✅ 找到 ${data.length} 条支付订单记录</h3>
+                                <table border="1" style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <th>订单号</th>
+                                        <th>金额</th>
+                                        <th>积分</th>
+                                        <th>状态</th>
+                                        <th>支付时间</th>
+                                        <th>创建时间</th>
+                                    </tr>
+                        `;
+                        
+                        data.forEach(order => {
+                            html += `
+                                <tr>
+                                    <td>${order.out_trade_no}</td>
+                                    <td>¥${order.amount}</td>
+                                    <td>${order.credits}</td>
+                                    <td style="color: ${order.status === 'paid' ? 'green' : order.status === 'pending' ? 'orange' : 'red'}">${order.status}</td>
+                                    <td>${order.paid_at || '未支付'}</td>
+                                    <td>${order.created_at}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `
+                                </table>
+                                <div style="margin-top: 20px; padding: 10px; background: #f0f0f0;">
+                                    <h4>🔍 分析结果：</h4>
+                        `;
+                        
+                        const pendingOrders = data.filter(order => order.status === 'pending');
+                        const paidOrders = data.filter(order => order.status === 'paid');
+                        
+                        if (pendingOrders.length > 0) {
+                            html += `<p style="color: orange;">⚠️ 有 ${pendingOrders.length} 个订单状态为pending，说明支付回调可能没有正确处理</p>`;
+                        }
+                        
+                        if (paidOrders.length > 0) {
+                            html += `<p style="color: green;">✅ 有 ${paidOrders.length} 个订单已支付，但积分可能没有正确增加</p>`;
+                        }
+                        
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                        
+                        resultDiv.innerHTML = html;
+                    }
+                    
+                } catch (error) {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: red; padding: 20px; border: 1px solid red; margin: 20px;">
+                            <h3>❌ 查询失败</h3>
+                            <p>错误信息: ${error.message}</p>
+                            <p>可能的原因：</p>
+                            <ul>
+                                <li>Supabase配置不正确</li>
+                                <li>数据库表不存在</li>
+                                <li>权限配置问题</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 页面加载后自动检查
+            checkPaymentOrders();
+        }
+    </script>
+</body>
+</html>

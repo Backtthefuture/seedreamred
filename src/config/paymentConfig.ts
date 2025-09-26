@@ -22,7 +22,7 @@ export const defaultPaymentConfig: PaymentConfig = {
   zpayKey: 'tNeFjVxC3b8IlgNJvqFA9oRNxy9ShaA1',       // 您的真实商户密钥
   
   // 应用配置
-  appUrl: 'http://localhost:5173',
+  appUrl: 'https://SeeDream.superhuang.me',
   siteName: '文字转小红书',
   
   // 模式配置
