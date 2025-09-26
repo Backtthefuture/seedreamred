@@ -99,9 +99,22 @@ function App() {
   useEffect(() => {
     // 使用环境变量配置API Key
     const apiKey = import.meta.env.VITE_DOUBAO_API_KEY || 'f9772eba-6dd6-4154-adbf-b1e234a1b0ee';
+    
+    console.log('🔧 配置API服务:', {
+      apiKey: apiKey ? `${apiKey.substring(0, 8)}...` : '未设置',
+      imageSize,
+      watermarkEnabled
+    });
+    
     doubaoAPI.setApiKey(apiKey);
     doubaoAPI.setImageSize(imageSize);
     doubaoAPI.setWatermarkEnabled(watermarkEnabled);
+    
+    // 同时为AI拆分服务设置API Key
+    import('../services/aiService').then(({ aiService }) => {
+      aiService.setApiKey(apiKey);
+      console.log('✅ AI拆分服务API Key已设置');
+    });
   }, [imageSize, watermarkEnabled]);
 
 
