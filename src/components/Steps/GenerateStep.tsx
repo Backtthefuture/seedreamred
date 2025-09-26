@@ -159,17 +159,22 @@ export const GenerateStep: React.FC = () => {
       return;
     }
     
+    console.log('🎬 开始生成流程');
     setIsGenerating(true);
     setGenerationProgress(0);
     
     try {
+      console.log('💰 尝试扣除积分:', requiredCredits);
       // 先扣除积分
       const deductResult = await deductCredits(requiredCredits);
+      console.log('💰 积分扣除结果:', deductResult);
       if (!deductResult) {
+        console.log('❌ 积分扣除失败');
         message.error('积分扣除失败，请重试');
         return;
       }
       
+      console.log('✅ 积分扣除成功，开始准备生成');
       message.success(`已扣除${requiredCredits}积分，开始生成图片...`);
       
       console.log('📝 准备提示词...');
