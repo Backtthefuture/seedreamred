@@ -200,7 +200,7 @@ export const GenerateStep: React.FC = () => {
       
       // 生成图片
       let completed = 0;
-      let failed = 0;
+      const finalResults = new Map(); // 记录每张图片的最终状态
       
       console.log('🚀 开始调用 doubaoAPI.generateImages');
       await doubaoAPI.generateImages(
@@ -209,29 +209,37 @@ export const GenerateStep: React.FC = () => {
           console.log('📊 图片生成回调:', { id, status, url: url ? 'URL已生成' : '无URL', error });
           if (status === 'success' && url) {
             updateImageUrl(id, url);
-            completed++;
+            finalResults.set(id, 'success');
+            // 重新计算完成数量
+            completed = Array.from(finalResults.values()).filter(s => s === 'success').length;
             const progress = Math.round((completed / prompts.length) * 100);
             console.log('✅ 图片生成成功:', { id, completed, total: prompts.length, progress });
             setGenerationProgress(progress);
           } else {
             updateImageStatus(id, status, error);
-            failed++;
-            console.log('❌ 图片生成失败:', { id, status, error, failed });
+            finalResults.set(id, 'failed');
+            console.log('❌ 图片生成失败:', { id, status, error });
           }
         }
       );
       
       console.log('🏁 doubaoAPI.generateImages 完成');
       
+      // 计算最终的失败数量
+      const finalFailed = Array.from(finalResults.values()).filter(s => s === 'failed').length;
+      const finalCompleted = Array.from(finalResults.values()).filter(s => s === 'success').length;
+      
+      console.log('📊 最终结果统计:', { finalCompleted, finalFailed, totalImages: prompts.length });
+      
       // 如果有失败的图片，返还对应的积分
-      if (failed > 0) {
-        const refundCredits = failed * 20;
+      if (finalFailed > 0) {
+        const refundCredits = finalFailed * 20;
         await deductCredits(-refundCredits); // 负数表示增加积分
-        message.warning(`${failed}张图片生成失败，已返还${refundCredits}积分`);
+        message.warning(`${finalFailed}张图片生成失败，已返还${refundCredits}积分`);
       }
       
-      if (completed > 0) {
-        message.success(`成功生成${completed}张图片！`);
+      if (finalCompleted > 0) {
+        message.success(`成功生成${finalCompleted}张图片！`);
         // 自动进入下一步
         setTimeout(() => nextStep(), 1000);
       } else {
