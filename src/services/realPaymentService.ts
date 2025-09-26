@@ -1,12 +1,12 @@
 // 强制使用真实支付服务
 import crypto from 'crypto-js';
 
-// 强制使用真实配置
+// 使用环境变量的真实配置
 const REAL_PAYMENT_CONFIG = {
   zpayPid: '2025062920440492',
   zpayKey: 'tNeFjVxC3b8IlgNJvqFA9oRNxy9ShaA1',
-  appUrl: 'http://localhost:5173',
-  siteName: '文字转小红书',
+  appUrl: import.meta.env.VITE_APP_URL || 'https://SeeDream.superhuang.me',
+  siteName: import.meta.env.VITE_SITE_NAME || '文字转小红书',
   isDemoMode: false // 强制设置为 false
 };
 
