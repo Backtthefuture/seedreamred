@@ -118,31 +118,44 @@ export const GenerateStep: React.FC = () => {
       return;
     }
     
-    console.log('💬 显示确认对话框');
-    // 确认消费积分
-    const confirmed = await new Promise((resolve) => {
-      Modal.confirm({
-        title: '确认生成图片',
-        content: (
-          <div>
-            <p>将生成 <strong>{splitResults.length}</strong> 张图片</p>
-            <p>消耗积分: <strong>{requiredCredits}</strong></p>
-            <p>剩余积分: <strong>{user.credits - requiredCredits}</strong></p>
-          </div>
-        ),
-        onOk: () => {
-          console.log('✅ 用户确认生成');
-          resolve(true);
-        },
-        onCancel: () => {
-          console.log('❌ 用户取消生成');
-          resolve(false);
-        },
-      });
-    });
+    console.log('💬 尝试显示确认对话框');
     
-    console.log('💬 确认对话框结果:', confirmed);
+    // 临时跳过确认对话框，直接开始生成
+    const useDirectGeneration = true;
+    
+    let confirmed = false;
+    
+    if (useDirectGeneration) {
+      // 使用简单的window.confirm作为临时解决方案
+      confirmed = window.confirm(`确认生成图片？\n将生成 ${splitResults.length} 张图片\n消耗积分: ${requiredCredits}\n剩余积分: ${user.credits - requiredCredits}`);
+      console.log('💬 window.confirm 结果:', confirmed);
+    } else {
+      // 原来的Modal.confirm方式
+      confirmed = await new Promise((resolve) => {
+        Modal.confirm({
+          title: '确认生成图片',
+          content: (
+            <div>
+              <p>将生成 <strong>{splitResults.length}</strong> 张图片</p>
+              <p>消耗积分: <strong>{requiredCredits}</strong></p>
+              <p>剩余积分: <strong>{user.credits - requiredCredits}</strong></p>
+            </div>
+          ),
+          onOk: () => {
+            console.log('✅ 用户确认生成');
+            resolve(true);
+          },
+          onCancel: () => {
+            console.log('❌ 用户取消生成');
+            resolve(false);
+          },
+        });
+      });
+    }
+    
+    console.log('💬 最终确认结果:', confirmed);
     if (!confirmed) {
+      console.log('🚫 用户取消生成');
       return;
     }
     
