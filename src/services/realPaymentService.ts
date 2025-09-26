@@ -1,51 +1,4 @@
-// 强制使用真实支付服务
-import crypto from 'crypto-js';
-
-// 使用环境变量的真实配置
-const REAL_PAYMENT_CONFIG = {
-  zpayPid: '2025062920440492',
-  zpayKey: 'tNeFjVxC3b8IlgNJvqFA9oRNxy9ShaA1',
-  appUrl: import.meta.env.VITE_APP_URL || 'https://SeeDream.superhuang.me',
-  siteName: import.meta.env.VITE_SITE_NAME || '文字转小红书',
-  isDemoMode: false // 强制设置为 false
-};
-
-// Z-Pay 签名算法
-function getVerifyParams(params: Record<string, any>) {
-  const sPara: [string, any][] = [];
-  
-  for (const key in params) {
-    if ((!params[key]) || key === "sign" || key === "sign_type") {
-      continue;
-    }
-    sPara.push([key, params[key]]);
-  }
-  
-  sPara.sort();
-  
-  let prestr = '';
-  for (let i = 0; i < sPara.length; i++) {
-    const obj = sPara[i];
-    if (i === sPara.length - 1) {
-      prestr = prestr + obj[0] + '=' + obj[1] + '';
-    } else {
-      prestr = prestr + obj[0] + '=' + obj[1] + '&';
-    }
-  }
-  return prestr;
-}
-
-function generateSign(paramString: string, key: string) {
-  const signString = paramString + key;
-  return crypto.MD5(signString).toString();
-}
-
-function generateOrderNo() {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `ORDER${timestamp}${random}`;
-}
-
+// 真实支付服务 - 调用后端API
 export interface PaymentRequest {
   product_name: string;
   amount: number;
@@ -69,11 +22,7 @@ export interface PaymentResponse {
 export class RealPaymentService {
   static async generatePaymentUrl(request: PaymentRequest): Promise<PaymentResponse> {
     try {
-      console.log('🚀 真实支付服务 - 收到请求:', request);
-      console.log('🔥 使用真实商户信息:', {
-        pid: REAL_PAYMENT_CONFIG.zpayPid,
-        isDemoMode: REAL_PAYMENT_CONFIG.isDemoMode
-      });
+      console.log('🚀 调用后端API创建支付订单:', request);
       
       const { product_name, amount, credits, payment_type = 'wxpay' } = request;
       
@@ -86,57 +35,59 @@ export class RealPaymentService {
         throw new Error('支付方式只支持 alipay 或 wxpay');
       }
       
-      const outTradeNo = generateOrderNo();
+      // 获取用户token
+      const token = localStorage.getItem('sb-miosumqzcgbscxrwdbuc-auth-token');
+      if (!token) {
+        throw new Error('用户未登录');
+      }
       
-      // 构建Z-Pay支付参数
-      const zpayParams = {
-        pid: REAL_PAYMENT_CONFIG.zpayPid,
-        money: parseFloat(amount.toString()).toFixed(2),
-        name: product_name,
-        notify_url: `${REAL_PAYMENT_CONFIG.appUrl}/api/payment/zpay-webhook`,
-        out_trade_no: outTradeNo,
-        return_url: `${REAL_PAYMENT_CONFIG.appUrl}/payment/success`,
-        sitename: REAL_PAYMENT_CONFIG.siteName,
-        type: payment_type,
-        param: `积分充值-${credits}积分`
-      };
+      const authData = JSON.parse(token);
+      const accessToken = authData?.access_token;
       
-      // 生成签名
-      const paramString = getVerifyParams(zpayParams);
-      const sign = generateSign(paramString, REAL_PAYMENT_CONFIG.zpayKey);
+      if (!accessToken) {
+        throw new Error('无效的认证信息');
+      }
       
-      const formData = {
-        ...zpayParams,
-        sign: sign,
-        sign_type: 'MD5'
-      };
-      
-      // 构建支付URL
-      const urlParams = new URLSearchParams(formData);
-      const paymentUrl = `https://z-pay.cn/submit.php?${urlParams.toString()}`;
-      
-      console.log('✅ 真实支付链接生成成功:', {
-        outTradeNo,
-        paramString,
-        sign,
-        paymentUrl
+      // 调用后端API创建支付订单
+      const response = await fetch('/api/payment/zpay-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          product_name,
+          amount,
+          credits,
+          payment_type
+        })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || '支付链接生成失败');
+      }
+      
+      console.log('✅ 后端API响应:', result);
       
       return {
         success: true,
-        payment_url: paymentUrl,
-        form_data: formData,
-        form_action: 'https://z-pay.cn/submit.php',
-        out_trade_no: outTradeNo,
-        method: 'POST',
-        debug_info: {
-          param_string: paramString,
-          sign: sign
-        }
+        payment_url: result.payment_url,
+        form_data: result.form_data,
+        form_action: result.form_action,
+        out_trade_no: result.out_trade_no,
+        method: 'API_CALL',
+        debug_info: result.debug_info
       };
       
     } catch (error) {
-      console.error('真实支付服务错误:', error);
+      console.error('支付API调用错误:', error);
       throw error;
     }
   }
