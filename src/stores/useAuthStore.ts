@@ -117,23 +117,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   // 扣除积分
   deductCredits: async (amount: number) => {
     const { user } = get();
+    console.log('🔍 Store deductCredits - 用户信息:', user ? { id: user.id, credits: user.credits } : '无用户');
+    
     if (!user) {
+      console.log('❌ Store deductCredits - 用户未登录');
       message.error('请先登录');
       return false;
     }
 
     try {
+      console.log('🚀 Store deductCredits - 调用 authService.deductCredits:', { userId: user.id, amount });
       const result = await authService.deductCredits(user.id, amount);
+      console.log('📊 Store deductCredits - authService 返回结果:', result);
       
       if (result.success && result.newCredits !== undefined) {
+        console.log('✅ Store deductCredits - 更新本地状态:', { oldCredits: user.credits, newCredits: result.newCredits });
         get().updateCredits(result.newCredits);
         return true;
       } else {
+        console.log('❌ Store deductCredits - 扣除失败:', result.error);
         message.error(result.error || '积分扣除失败');
         return false;
       }
     } catch (error) {
-      console.error('Deduct credits error:', error);
+      console.error('❌ Store deductCredits - 异常:', error);
       message.error('积分扣除过程中发生错误');
       return false;
     }

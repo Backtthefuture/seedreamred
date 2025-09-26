@@ -185,57 +185,86 @@ export class AuthService {
 
   // 更新用户积分
   async updateCredits(userId: string, newCredits: number): Promise<{ success: boolean; error?: string }> {
+    console.log('🔍 AuthService updateCredits - 开始更新积分:', { userId, newCredits });
+    
     try {
-      const { error } = await supabase
+      const updateData = { 
+        credits: newCredits,
+        updated_at: new Date().toISOString()
+      };
+      console.log('📝 AuthService updateCredits - 更新数据:', updateData);
+      
+      const { data, error, count } = await supabase
         .from('user_profiles')
-        .update({ 
-          credits: newCredits,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
+        .update(updateData)
+        .eq('id', userId)
+        .select(); // 添加 select 来获取更新后的数据
+
+      console.log('📊 AuthService updateCredits - Supabase 响应:', { data, error, count });
 
       if (error) {
-        console.error('Update credits error:', error);
+        console.error('❌ AuthService updateCredits - Supabase 错误:', error);
         return { success: false, error: '积分更新失败' };
       }
 
+      if (!data || data.length === 0) {
+        console.log('⚠️ AuthService updateCredits - 没有行被更新，可能用户ID不存在');
+        return { success: false, error: '用户不存在或无权限更新' };
+      }
+
+      console.log('✅ AuthService updateCredits - 更新成功:', data[0]);
       return { success: true };
     } catch (error) {
-      console.error('Update credits error:', error);
+      console.error('❌ AuthService updateCredits - 异常:', error);
       return { success: false, error: '积分更新过程中发生错误' };
     }
   }
 
   // 扣除积分
   async deductCredits(userId: string, amount: number): Promise<{ success: boolean; newCredits?: number; error?: string }> {
+    console.log('🔍 AuthService deductCredits - 开始扣除积分:', { userId, amount });
+    
     try {
       // 先获取当前积分
+      console.log('📋 AuthService deductCredits - 查询用户积分');
       const { data: profile, error: fetchError } = await supabase
         .from('user_profiles')
         .select('credits')
         .eq('id', userId)
         .single();
 
+      console.log('📊 AuthService deductCredits - 查询结果:', { profile, fetchError });
+
       if (fetchError || !profile) {
+        console.log('❌ AuthService deductCredits - 获取用户积分失败:', fetchError);
         return { success: false, error: '获取用户积分失败' };
       }
 
       const currentCredits = profile.credits;
+      console.log('💰 AuthService deductCredits - 当前积分:', currentCredits);
+      
       if (currentCredits < amount) {
+        console.log('❌ AuthService deductCredits - 积分不足:', { current: currentCredits, required: amount });
         return { success: false, error: '积分不足' };
       }
 
       const newCredits = currentCredits - amount;
+      console.log('🔢 AuthService deductCredits - 计算新积分:', { current: currentCredits, deduct: amount, new: newCredits });
 
       // 更新积分
+      console.log('🔄 AuthService deductCredits - 调用 updateCredits');
       const updateResult = await this.updateCredits(userId, newCredits);
+      console.log('📊 AuthService deductCredits - updateCredits 结果:', updateResult);
+      
       if (!updateResult.success) {
+        console.log('❌ AuthService deductCredits - 更新积分失败:', updateResult);
         return updateResult;
       }
 
+      console.log('✅ AuthService deductCredits - 扣除成功:', { newCredits });
       return { success: true, newCredits };
     } catch (error) {
-      console.error('Deduct credits error:', error);
+      console.error('❌ AuthService deductCredits - 异常:', error);
       return { success: false, error: '扣除积分过程中发生错误' };
     }
   }
