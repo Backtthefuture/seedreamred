@@ -67,8 +67,20 @@ export const GenerateStep: React.FC = () => {
   }, [generatedImages, isGenerating, setCanProceed]);
   
   const handleGenerateImages = async () => {
+    console.log('🎯 生成按钮被点击');
+    console.log('🔍 当前状态:', {
+      isAuthenticated,
+      user: user ? `用户ID: ${user.id}` : '无用户',
+      selectedTemplateId,
+      templatesLength: templates.length,
+      splitResultsLength: splitResults.length,
+      userCredits: user?.credits || 0,
+      requiredCredits: splitResults.length * 20
+    });
+    
     // 检查用户是否已登录
     if (!isAuthenticated || !user) {
+      console.log('❌ 用户未登录');
       message.error({
         content: '请先登录后再使用图片生成功能',
         duration: 5
@@ -337,7 +349,10 @@ export const GenerateStep: React.FC = () => {
                 type="primary"
                 size="large"
                 icon={<PictureOutlined />}
-                onClick={handleGenerateImages}
+                onClick={(e) => {
+                  console.log('🖱️ 按钮点击事件触发', e);
+                  handleGenerateImages();
+                }}
                 disabled={!selectedTemplateId || templates.length === 0 || !isAuthenticated || !user || (user && user.credits < splitResults.length * 20)}
                 className="btn-hover-effect"
               >
@@ -345,16 +360,15 @@ export const GenerateStep: React.FC = () => {
               </Button>
               
               {/* 调试信息 */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 text-xs text-gray-500">
-                  调试: 模板={selectedTemplateId ? '✓' : '✗'} | 
-                  模板数={templates.length} | 
-                  认证={isAuthenticated ? '✓' : '✗'} | 
-                  用户={user ? '✓' : '✗'} | 
-                  积分={user?.credits || 0} | 
-                  需要={splitResults.length * 20}
-                </div>
-              )}
+              <div className="mt-2 text-xs text-gray-500">
+                <div>调试: 模板={selectedTemplateId ? '✓' : '✗'} | 
+                模板数={templates.length} | 
+                认证={isAuthenticated ? '✓' : '✗'} | 
+                用户={user ? '✓' : '✗'} | 
+                积分={user?.credits || 0} | 
+                需要={splitResults.length * 20}</div>
+                <div>按钮禁用状态: {(!selectedTemplateId || templates.length === 0 || !isAuthenticated || !user || (user && user.credits < splitResults.length * 20)) ? '是' : '否'}</div>
+              </div>
             </div>
           </>
         )}
