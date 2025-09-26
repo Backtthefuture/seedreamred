@@ -174,10 +174,26 @@ export default async function handler(req, res) {
       }
       
       // 给用户增加积分
+      // 先获取当前积分
+      const { data: currentProfile, error: getProfileError } = await supabase
+        .from('user_profiles')
+        .select('credits')
+        .eq('id', order.user_id)
+        .single();
+      
+      if (getProfileError) {
+        console.error('获取用户当前积分失败:', getProfileError);
+        res.status(500).send('GET_PROFILE_FAILED');
+        return;
+      }
+      
+      // 计算新积分并更新
+      const newCredits = currentProfile.credits + order.credits;
       const { error: creditError } = await supabase
         .from('user_profiles')
         .update({
-          credits: supabase.sql`credits + ${order.credits}`
+          credits: newCredits,
+          updated_at: new Date().toISOString()
         })
         .eq('id', order.user_id);
       
