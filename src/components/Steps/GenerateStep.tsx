@@ -88,22 +88,29 @@ export const GenerateStep: React.FC = () => {
       return;
     }
     
+    console.log('🎨 检查模板:', selectedTemplateId);
     const template = getTemplateById(selectedTemplateId);
+    console.log('🎨 获取的模板:', template);
     if (!template) {
+      console.log('❌ 模板未找到');
       message.error('请选择一个模板');
       return;
     }
     
+    console.log('📝 检查拆分结果:', splitResults.length);
     if (splitResults.length === 0) {
+      console.log('❌ 没有拆分结果');
       message.error('没有可生成的内容');
       return;
     }
     
     // 计算需要消耗的积分（每张图片20积分）
     const requiredCredits = splitResults.length * 20;
+    console.log('💰 积分检查:', { userCredits: user.credits, requiredCredits });
     
     // 检查积分是否充足
     if (user.credits < requiredCredits) {
+      console.log('❌ 积分不足');
       message.error({
         content: `积分不足！生成${splitResults.length}张图片需要${requiredCredits}积分，您当前有${user.credits}积分。请购买积分后继续。`,
         duration: 8
@@ -111,6 +118,7 @@ export const GenerateStep: React.FC = () => {
       return;
     }
     
+    console.log('💬 显示确认对话框');
     // 确认消费积分
     const confirmed = await new Promise((resolve) => {
       Modal.confirm({
@@ -122,11 +130,18 @@ export const GenerateStep: React.FC = () => {
             <p>剩余积分: <strong>{user.credits - requiredCredits}</strong></p>
           </div>
         ),
-        onOk: () => resolve(true),
-        onCancel: () => resolve(false),
+        onOk: () => {
+          console.log('✅ 用户确认生成');
+          resolve(true);
+        },
+        onCancel: () => {
+          console.log('❌ 用户取消生成');
+          resolve(false);
+        },
       });
     });
     
+    console.log('💬 确认对话框结果:', confirmed);
     if (!confirmed) {
       return;
     }
