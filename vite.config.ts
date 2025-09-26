@@ -81,7 +81,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         configure: (proxy: any, _options: any) => {
-          proxy.on('proxyReq', (proxyReq: any, req: any, _res: any) => {
+          proxy.on('proxyReq', (_proxyReq: any, req: any, _res: any) => {
             console.log('[Proxy] Payment API Request:', req.url);
           });
           proxy.on('error', (err: any, _req: any, _res: any) => {

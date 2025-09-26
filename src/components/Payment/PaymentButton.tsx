@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, message } from 'antd';
 import { CreditCardOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
-import { MockPaymentService } from '../../services/mockPaymentService';
 import { RealPaymentService } from '../../services/realPaymentService';
 
 interface PaymentButtonProps {
@@ -46,7 +45,6 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   amount,
   credits,
   paymentType = 'wxpay', // 默认微信支付
-  subscriptionType,
   className,
   size = 'large',
   type = 'primary',

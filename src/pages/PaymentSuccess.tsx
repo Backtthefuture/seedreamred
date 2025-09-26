@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Result, Button, Card, Typography, Spin } from 'antd';
 import { CheckCircleOutlined, HomeOutlined } from '@ant-design/icons';
-import { useAuthStore } from '../../stores/useAuthStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 const { Title, Paragraph } = Typography;
 

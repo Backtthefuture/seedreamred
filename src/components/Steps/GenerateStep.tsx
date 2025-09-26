@@ -25,6 +25,7 @@ import {
 import { useAppStore } from '../../stores/useAppStore';
 import { useTemplateStore } from '../../stores/useTemplateStore';
 import { useStepStore } from '../../stores/useStepStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { StepContainer } from '../Navigation/StepContainer';
 import { doubaoAPI } from '../../services/apiClient';
 import { PromptBuilder } from '../../services/promptBuilder';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Card, Button, Typography, message, Spin, Radio, Space, Alert } from 'antd';
-import { CrownOutlined, ShoppingCartOutlined, WalletOutlined, AlipayOutlined, WechatOutlined } from '@ant-design/icons';
+import { CrownOutlined, WalletOutlined, AlipayOutlined, WechatOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { PaymentButton } from '../Payment';
 import { PaymentChannelService } from '../../services/paymentChannelService';
@@ -66,7 +66,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
   const { user, isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState<string | null>(null);
   const [paymentType, setPaymentType] = useState<'wxpay' | 'alipay'>('wxpay');
-  const [availableChannels, setAvailableChannels] = useState(PaymentChannelService.getAvailableChannels());
 
   // 初始化时设置推荐的支付方式
   useEffect(() => {
@@ -75,18 +74,18 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
   }, []);
 
   // 支付相关处理
-  const handlePaymentStart = (optionId: string) => {
-    setLoading(optionId);
+  const handlePaymentStart = () => {
+    setLoading('payment');
     message.info('正在跳转到支付页面...');
   };
 
-  const handlePaymentSuccess = (optionId: string, orderInfo: any) => {
+  const handlePaymentSuccess = (orderInfo: any) => {
     console.log('支付成功:', orderInfo);
     message.success('支付链接生成成功，即将跳转到支付页面');
     setLoading(null);
   };
 
-  const handlePaymentError = (optionId: string, error: string) => {
+  const handlePaymentError = (error: string) => {
     console.error('支付错误:', error);
     message.error(`支付失败: ${error}`);
     setLoading(null);
@@ -260,7 +259,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             <Space direction="horizontal" size="large" className="w-full justify-center">
               <Radio.Button 
                 value="wxpay" 
-                size="large" 
                 className="flex-1 text-center"
                 disabled={!PaymentChannelService.isPaymentTypeAvailable('wxpay')}
               >
@@ -272,7 +270,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
               </Radio.Button>
               <Radio.Button 
                 value="alipay" 
-                size="large" 
                 className="flex-1 text-center"
                 disabled={!PaymentChannelService.isPaymentTypeAvailable('alipay')}
               >

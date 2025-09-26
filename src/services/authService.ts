@@ -1,5 +1,4 @@
-import { supabase, type AuthUser, type SignUpData, type SignInData, type UserProfile } from './supabaseClient';
-import { message } from 'antd';
+import { supabase, type AuthUser, type SignUpData, type SignInData } from './supabaseClient';
 
 export class AuthService {
   // 用户注册
@@ -272,7 +271,7 @@ export class AuthService {
 
   // 监听认证状态变化
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
+    return supabase.auth.onAuthStateChange(async (_, session) => {
       if (session?.user) {
         const user = await this.getCurrentUser();
         callback(user);
