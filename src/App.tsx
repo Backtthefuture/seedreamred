@@ -30,6 +30,7 @@ import { useAuthStore } from './stores/useAuthStore';
 
 // Services
 import { doubaoAPI } from './services/apiClient';
+import { aiService } from './services/aiService';
 
 // Utils
 import { storage } from './utils/storage';
@@ -112,10 +113,8 @@ function App() {
       doubaoAPI.setWatermarkEnabled(watermarkEnabled);
       
       // 同时为AI拆分服务设置API Key
-      import('../services/aiService').then(({ aiService }) => {
-        aiService.setApiKey(apiKey);
-        console.log('✅ AI拆分服务已配置');
-      });
+      aiService.setApiKey(apiKey);
+      console.log('✅ AI拆分服务已配置');
     } else {
       console.warn('⚠️ 未找到 VITE_DOUBAO_API_KEY 环境变量');
     }
