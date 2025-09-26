@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Pay 支付测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #1890ff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #40a9ff;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #52c41a;
+        }
+        .error {
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            color: #ff4d4f;
+        }
+        .info {
+            background: #f0f9ff;
+            border: 1px solid #91d5ff;
+            color: #1890ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Z-Pay 支付系统测试工具</h1>
+        <p>用于测试Z-Pay支付接口的集成情况</p>
+
+        <div class="form-group">
+            <label>商品名称</label>
+            <input type="text" id="productName" value="积分充值-标准包" placeholder="商品名称">
+        </div>
+
+        <div class="form-group">
+            <label>订单金额（元）</label>
+            <input type="number" id="amount" value="5.00" step="0.01" placeholder="订单金额">
+        </div>
+
+        <div class="form-group">
+            <label>积分数量</label>
+            <input type="number" id="credits" value="500" placeholder="积分数量">
+        </div>
+
+        <div class="form-group">
+            <label>支付方式</label>
+            <select id="paymentType">
+                <option value="wxpay">微信支付</option>
+                <option value="alipay">支付宝</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>商户ID (PID)</label>
+            <input type="text" id="pid" value="demo_pid" placeholder="商户唯一标识">
+        </div>
+
+        <div class="form-group">
+            <label>商户密钥 (KEY)</label>
+            <input type="password" id="key" value="demo_key" placeholder="商户密钥">
+        </div>
+
+        <div class="form-group">
+            <label>回调地址</label>
+            <input type="url" id="notifyUrl" value="http://localhost:5173/api/payment/zpay-webhook" placeholder="异步通知地址">
+        </div>
+
+        <div class="form-group">
+            <label>跳转地址</label>
+            <input type="url" id="returnUrl" value="http://localhost:5173/payment/success" placeholder="支付完成跳转地址">
+        </div>
+
+        <button onclick="generatePaymentUrl()">生成支付链接</button>
+        <button onclick="testSignature()">测试签名算法</button>
+        <button onclick="simulateCallback()">模拟回调</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // MD5加密函数（简化版，仅用于测试）
+        function md5(string) {
+            // 注意：这里应该使用真正的MD5库，这只是示例
+            return 'test_signature_' + string.length;
+        }
+
+        // 生成签名参数字符串
+        function getVerifyParams(params) {
+            const filteredParams = {};
+            Object.keys(params).forEach(key => {
+                if (params[key] !== '' && params[key] !== null && params[key] !== undefined && 
+                    key !== 'sign' && key !== 'sign_type') {
+                    filteredParams[key] = params[key];
+                }
+            });
+            
+            const sortedKeys = Object.keys(filteredParams).sort();
+            return sortedKeys.map(key => `${key}=${filteredParams[key]}`).join('&');
+        }
+
+        // 生成支付链接
+        function generatePaymentUrl() {
+            const params = {
+                name: document.getElementById('productName').value,
+                money: parseFloat(document.getElementById('amount').value).toFixed(2),
+                type: document.getElementById('paymentType').value,
+                out_trade_no: 'ORDER' + Date.now(),
+                notify_url: document.getElementById('notifyUrl').value,
+                pid: document.getElementById('pid').value,
+                return_url: document.getElementById('returnUrl').value,
+                param: `积分充值-${document.getElementById('credits').value}积分`,
+                sign_type: 'MD5'
+            };
+
+            const paramString = getVerifyParams(params);
+            const key = document.getElementById('key').value;
+            const sign = md5(paramString + key); // 实际应用中使用真正的MD5
+
+            const fullUrl = `https://z-pay.cn/submit.php?${paramString}&sign=${sign}&sign_type=MD5`;
+
+            showResult(`生成的支付参数：
+参数字符串: ${paramString}
+签名: ${sign}
+完整URL: ${fullUrl}
+
+注意：这是测试生成的链接，实际使用时请确保：
+1. 使用真正的MD5加密算法
+2. 填入正确的商户ID和密钥
+3. 确保回调地址可以被Z-Pay访问`, 'success');
+        }
+
+        // 测试签名算法
+        function testSignature() {
+            const testParams = {
+                name: 'iPhone XS Max 一台',
+                money: '0.03',
+                type: 'alipay',
+                out_trade_no: '201911914837526544601',
+                notify_url: 'http://www.aaa.com/notify_url.php',
+                pid: '201901151314084206659771',
+                param: '金色 256G',
+                return_url: 'http://www.baidu.com',
+                sign_type: 'MD5'
+            };
+
+            const paramString = getVerifyParams(testParams);
+            const expectedSign = '28f9583617d9caf66834292b6ab1cc89'; // 官方示例
+
+            showResult(`签名算法测试：
+参数字符串: ${paramString}
+期望签名: ${expectedSign}
+
+注意：这里使用的是Z-Pay官方文档的示例数据
+实际签名需要使用真正的MD5算法和正确的商户密钥`, 'info');
+        }
+
+        // 模拟回调
+        function simulateCallback() {
+            const callbackParams = {
+                pid: document.getElementById('pid').value,
+                name: document.getElementById('productName').value,
+                money: document.getElementById('amount').value,
+                out_trade_no: 'ORDER' + Date.now(),
+                trade_no: '2024' + Date.now(),
+                param: `积分充值-${document.getElementById('credits').value}积分`,
+                trade_status: 'TRADE_SUCCESS',
+                type: document.getElementById('paymentType').value,
+                sign_type: 'MD5'
+            };
+
+            const paramString = getVerifyParams(callbackParams);
+            const sign = md5(paramString + document.getElementById('key').value);
+            callbackParams.sign = sign;
+
+            const callbackUrl = document.getElementById('notifyUrl').value + '?' + 
+                Object.keys(callbackParams).map(key => `${key}=${encodeURIComponent(callbackParams[key])}`).join('&');
+
+            showResult(`模拟回调数据：
+回调参数: ${JSON.stringify(callbackParams, null, 2)}
+回调URL: ${callbackUrl}
+
+注意：这是模拟的回调数据，实际回调由Z-Pay发送
+可以使用这些参数测试您的回调接口`, 'info');
+        }
+
+        // 显示结果
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+
+        // 页面加载完成后的初始化
+        window.onload = function() {
+            showResult('Z-Pay 支付测试工具已就绪\n请填写相关参数后点击按钮进行测试', 'info');
+        };
+    </script>
+</body>
+</html>
