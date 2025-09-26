@@ -204,7 +204,11 @@ export const GenerateStep: React.FC = () => {
       title={
         <div className="flex items-center gap-2">
           <span>🎨 选择图片风格模板</span>
-          <Tag color="orange" icon={<DollarOutlined />}>需要API Key</Tag>
+          {isAuthenticated && user && (
+            <Tag color="green" icon={<DollarOutlined />}>
+              {user.credits} 积分
+            </Tag>
+          )}
         </div>
       }
       nextDisabled={generatedImages.length === 0 || isGenerating}
@@ -334,11 +338,23 @@ export const GenerateStep: React.FC = () => {
                 size="large"
                 icon={<PictureOutlined />}
                 onClick={handleGenerateImages}
-                disabled={!selectedTemplateId || templates.length === 0 || !isAuthenticated || !user || (user.credits < splitResults.length * 20)}
+                disabled={!selectedTemplateId || templates.length === 0 || !isAuthenticated || !user || (user && user.credits < splitResults.length * 20)}
                 className="btn-hover-effect"
               >
                 开始生成图片
               </Button>
+              
+              {/* 调试信息 */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-2 text-xs text-gray-500">
+                  调试: 模板={selectedTemplateId ? '✓' : '✗'} | 
+                  模板数={templates.length} | 
+                  认证={isAuthenticated ? '✓' : '✗'} | 
+                  用户={user ? '✓' : '✗'} | 
+                  积分={user?.credits || 0} | 
+                  需要={splitResults.length * 20}
+                </div>
+              )}
             </div>
           </>
         )}
