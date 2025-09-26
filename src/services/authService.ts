@@ -249,7 +249,7 @@ export class AuthService {
         .eq('id', userId)
         .single();
       
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('查询超时')), 10000); // 10秒超时
       });
       
@@ -261,6 +261,7 @@ export class AuthService {
       } catch (error) {
         console.log('⏰ AuthService deductCredits - 查询超时或失败:', error);
         fetchError = error;
+        profile = null;
       }
 
       console.log('📊 AuthService deductCredits - 查询结果:', { profile, fetchError });
